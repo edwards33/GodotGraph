@@ -17,6 +17,7 @@ var colors = {
 var created_edgies = []
 
 func _ready():
+	randomize()
 	generate_graph()
 
 func generate_graph():
@@ -24,6 +25,10 @@ func generate_graph():
 	
 	# First, create and store all the node instances
 	var node_instances = {}
+	var total_nodes = len(graph)
+	var y_spacing = 5
+	var i = 0
+
 	for vertex in graph:
 		# Create a node for the vertex and set its position
 		var node = MeshInstance.new()
@@ -36,12 +41,18 @@ func generate_graph():
 		# Assign the material to the node
 		node.set_surface_material(0, material)
 		
-		node.set_translation(Vector3(rand_range(-10, 10), rand_range(-10, 10), rand_range(-10, 10)))
+		if vertex == "A":
+			node.set_translation(Vector3(0, 0, 0))
+		else:
+			node.set_translation(Vector3(rand_range(-10, 10), i * y_spacing, rand_range(-10, 10)))
+
 		graph_holder.add_child(node)
 		
 		# Set a unique name for the node to reference it later
 		node.set_name(vertex)
 		node_instances[vertex] = node
+
+		i += 1
 
 	# Then, create the edges using the stored node instances (deferred)
 	for vertex in graph:
@@ -49,8 +60,6 @@ func generate_graph():
 			# Avoid creating duplicate edges
 			if not graph_holder.has_node(neighbor + "_" + vertex):
 				call_deferred("create_and_add_edge", node_instances[vertex], node_instances[neighbor], vertex, neighbor)
-
-# ... rest of the code ...
 
 
 func create_and_add_edge(start_node, end_node, start_name, end_name):
