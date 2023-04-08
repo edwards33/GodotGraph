@@ -17,8 +17,35 @@ var colors = {
 var created_edgies = []
 
 func _ready():
-	randomize()
 	generate_graph()
+	
+func create_label(vertex, node):
+	var label = Label.new()
+	label.text = vertex
+	label.rect_min_size = Vector2(30, 20)  # Adjust the size of the label if needed
+	label.align = Label.ALIGN_CENTER
+	label.valign = Label.VALIGN_CENTER
+	label.set_name("label_" + vertex)
+	get_node("ControlHolder").add_child(label)
+	
+	# Update the position of the label every frame
+	set_process(true)
+
+func _process(delta):
+	update_label_positions()
+
+func update_label_positions():
+	var camera = get_viewport().get_camera()
+	for vertex in graph:
+		var node = get_node("GraphHolder/" + vertex)
+		var label = get_node("ControlHolder/label_" + vertex)
+
+		# Convert the 3D position of the node to 2D screen coordinates
+		var screen_pos = camera.unproject_position(node.global_transform.origin)
+
+		# Offset the label's position to display it below the node
+		label.rect_position = screen_pos - label.rect_min_size / 2 + Vector2(0, 20)
+
 
 func generate_graph():
 	var graph_holder = get_node("GraphHolder")
@@ -51,7 +78,8 @@ func generate_graph():
 		# Set a unique name for the node to reference it later
 		node.set_name(vertex)
 		node_instances[vertex] = node
-
+		create_label(vertex, node)
+		
 		i += 1
 
 	# Then, create the edges using the stored node instances (deferred)
@@ -60,6 +88,8 @@ func generate_graph():
 			# Avoid creating duplicate edges
 			if not graph_holder.has_node(neighbor + "_" + vertex):
 				call_deferred("create_and_add_edge", node_instances[vertex], node_instances[neighbor], vertex, neighbor)
+
+# ... rest of the code ...
 
 
 func create_and_add_edge(start_node, end_node, start_name, end_name):

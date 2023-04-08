@@ -12,3 +12,7 @@ current = true
 script = ExtResource( 2 )
 
 [node name="GraphHolder" type="Spatial" parent="."]
+
+[node name="ControlHolder" type="Control" parent="."]
+margin_right = 40.0
+margin_bottom = 40.0
