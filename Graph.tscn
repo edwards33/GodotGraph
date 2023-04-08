@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Graph.gd" type="Script" id=1]
+[ext_resource path="res://Camera.gd" type="Script" id=2]
+
+[node name="Graph" type="Spatial"]
+script = ExtResource( 1 )
+
+[node name="Camera" type="Camera" parent="."]
+transform = Transform( 1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 5, 20 )
+current = true
+script = ExtResource( 2 )
+
+[node name="GraphHolder" type="Spatial" parent="."]
