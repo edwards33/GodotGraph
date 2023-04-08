@@ -14,9 +14,69 @@ var colors = {
 	"D": Color.green,
 }
 
+var images = {
+	"A": "https://pngimg.com/uploads/baby/baby_PNG51756.png",
+	"B": "https://th.bing.com/th/id/R.60215ab247dfdf4f132757ddc6a5b33b?rik=F8HXZPtgCUWuNA&pid=ImgRaw&r=0",
+	"C": "https://pngimg.com/uploads/baby/baby_PNG51756.png",
+	"D": "https://www.odense.dk/emneromboernogfamilier/-/media/websites/emneromboernogfamilier/billeder/baby-i-ble,-der-kravler.png",
+}
+
+var nodes_to_request = []
+
+func _on_http_request_completed(result, response_code, headers, body):
+	if response_code == 200:
+		var image = Image.new()
+		var error = image.load_png_from_buffer(body)
+
+		if error == OK:
+			var texture = ImageTexture.new()
+			texture.create_from_image(image)
+			var node_name = get_node("HTTPRequest").get_meta("node_name")
+			apply_texture_to_node(node_name, texture)
+		else:
+			print("Error loading image: ", error)
+	else:
+		print("Error downloading image, response code: ", response_code)
+
+	process_next_request()
+
+
+func apply_texture_to_node(node_name, texture):
+	var node = get_node("GraphHolder/" + node_name)
+	
+	var quad_mesh = QuadMesh.new()
+	var material = SpatialMaterial.new()
+	material.albedo_texture = texture
+	material.flags_transparent = true
+	material.flags_unshaded = true
+	material.params_cull_mode = SpatialMaterial.CULL_DISABLED
+	quad_mesh.surface_set_material(0, material)
+	
+	var quad = MeshInstance.new()
+	quad.set_mesh(quad_mesh)
+	node.add_child(quad)
+
+	# Position the quad slightly above the surface of the sphere
+	var sphere_radius = 1.0 # Assuming the default sphere radius of 1.0
+	quad.set_translation(Vector3(0, sphere_radius + 0.5, 0))
+
+
+
+func process_next_request():
+	if nodes_to_request.size() > 0:
+		var vertex = nodes_to_request.pop_front()
+		get_node("HTTPRequest").set_meta("node_name", vertex)
+		get_node("HTTPRequest").request(images[vertex])
+
+
 var created_edgies = []
 
 func _ready():
+	var http_request = HTTPRequest.new()
+	add_child(http_request)
+	http_request.set_name("HTTPRequest")
+	http_request.connect("request_completed", self, "_on_http_request_completed")
+	
 	generate_graph()
 	
 func create_label(vertex, node):
@@ -81,6 +141,9 @@ func generate_graph():
 		create_label(vertex, node)
 		
 		i += 1
+		nodes_to_request.append(vertex)
+	process_next_request()
+	
 
 	# Then, create the edges using the stored node instances (deferred)
 	for vertex in graph:
