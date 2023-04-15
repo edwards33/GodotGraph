@@ -16,3 +16,15 @@ script = ExtResource( 2 )
 [node name="ControlHolder" type="Control" parent="."]
 margin_right = 40.0
 margin_bottom = 40.0
+
+[node name="NameEditPanel" type="Panel" parent="."]
+visible = false
+margin_right = 40.0
+margin_bottom = 40.0
+
+[node name="NameEdit" type="LineEdit" parent="NameEditPanel"]
+margin_right = 58.0
+margin_bottom = 24.0
+
+[connection signal="focus_exited" from="NameEditPanel/NameEdit" to="." method="_on_NameEdit_focus_exited"]
+[connection signal="text_entered" from="NameEditPanel/NameEdit" to="." method="_on_NameEdit_text_entered"]

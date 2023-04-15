@@ -1,5 +1,7 @@
 extends Spatial
 
+var selected_node = null
+
 var graph = {
 	"A": ["B", "C"],
 	"B": ["A", "C"],
@@ -110,7 +112,7 @@ func update_label_positions():
 	for vertex in graph:
 		var node = get_node("GraphHolder/" + vertex)
 		var label = get_node("ControlHolder/label_" + vertex)
-
+		
 		# Convert the 3D position of the node to 2D screen coordinates
 		var screen_pos = camera.unproject_position(node.global_transform.origin)
 
@@ -240,5 +242,28 @@ func _unhandled_input(event):
 			var colliding_node = result["collider"]
 			if colliding_node is StaticBody:
 				print("Selected node:", colliding_node.get_parent().get_name())
+				selected_node = colliding_node.get_parent()
+				show_name_edit_panel()
+				
+func show_name_edit_panel():
+	yield(get_tree(), "idle_frame")
+	var panel = get_node("/root/Graph/NameEditPanel")
+	var line_edit = get_node("/root/Graph/NameEditPanel/NameEdit")
+	panel.visible = true
+	line_edit.text = selected_node.get_name()
+	line_edit.grab_focus()
 
 
+func _on_NameEdit_text_entered(new_text):
+	if selected_node:
+		# Remove the old label
+		var old_label_name = "label_" + selected_node.get_name()
+		var old_label = get_node("ControlHolder/" + old_label_name)
+		# Update the text of the old label
+		old_label.text = new_text
+		
+		selected_node = null
+	get_node("NameEditPanel").visible = false
+
+func _on_NameEdit_focus_exited():
+	get_node("NameEditPanel").visible = false
