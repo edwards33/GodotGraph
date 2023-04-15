@@ -79,6 +79,17 @@ func _ready():
 	
 	generate_graph()
 	
+	# Add RayCast node
+	var raycast = RayCast.new()
+	add_child(raycast)
+	raycast.set_name("RayCast")
+	raycast.enabled = true
+	#raycast.collision_layer = 1 << 0  # Set the RayCast collision layer
+	#raycast.collision_mask = 1 << 0   # Set the RayCast collision mask
+
+	# Enable input processing
+	set_process_input(true)
+	
 func create_label(vertex, node):
 	var label = Label.new()
 	label.text = vertex
@@ -120,6 +131,16 @@ func generate_graph():
 		# Create a node for the vertex and set its position
 		var node = MeshInstance.new()
 		node.set_mesh(SphereMesh.new())
+		
+		# Add a StaticBody with a CollisionShape as a child of the MeshInstance
+		var static_body = StaticBody.new()
+		var collision_shape = CollisionShape.new()
+		collision_shape.set_shape(SphereShape.new())
+		static_body.add_child(collision_shape)
+		node.add_child(static_body)
+
+		# Set the collision layer for the StaticBody node
+		static_body.set_collision_layer(1 << 0)
 		
 		# Create a new material and set its color
 		var material = SpatialMaterial.new()
@@ -199,3 +220,25 @@ func create_edge(start_node, end_node):
 	edge.rotate(axis.normalized(), angle)
 	
 	return edge
+
+func _unhandled_input(event):
+	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT:
+		# Get the camera and viewport
+		var camera = get_viewport().get_camera()
+
+		# Cast a ray from the camera to the mouse position
+		var from = camera.project_ray_origin(event.position)
+		var to = from + camera.project_ray_normal(event.position) * 1000
+
+		# Prepare the space state for raycasting
+		var space_state = get_world().direct_space_state
+
+		# Perform the raycast
+		var result = space_state.intersect_ray(from, to)
+
+		if result.size() > 0:
+			var colliding_node = result["collider"]
+			if colliding_node is StaticBody:
+				print("Selected node:", colliding_node.get_parent().get_name())
+
+
