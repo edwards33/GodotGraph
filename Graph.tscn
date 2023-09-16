@@ -37,6 +37,13 @@ margin_right = 2.0
 margin_bottom = 256.0
 script = ExtResource( 3 )
 
+[node name="DeleteEdgeButton" type="Button" parent="NameEditPanel"]
+margin_left = 10.0
+margin_top = 660.0
+margin_right = 390.0
+margin_bottom = 720.0
+text = "Delete Connection"
+
 [node name="ImageEdit" type="LineEdit" parent="NameEditPanel"]
 margin_left = 10.0
 margin_top = 747.0
@@ -84,6 +91,7 @@ radial_fill_degrees = 60.0
 
 [connection signal="focus_exited" from="NameEditPanel/NameEdit" to="." method="_on_NameEdit_focus_exited"]
 [connection signal="text_entered" from="NameEditPanel/NameEdit" to="." method="_on_NameEdit_text_entered"]
+[connection signal="pressed" from="NameEditPanel/DeleteEdgeButton" to="." method="_on_DeleteEdgeButton_pressed"]
 [connection signal="text_entered" from="NameEditPanel/ImageEdit" to="." method="_on_ImageEdit_text_entered"]
 [connection signal="pressed" from="NameEditPanel/ReloadButton" to="." method="_on_ReloadButton_pressed"]
 [connection signal="pressed" from="NameEditPanel/UseOldButton" to="." method="_on_UseOldImageButton_pressed"]
