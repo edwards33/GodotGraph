@@ -4,6 +4,8 @@ var selected_node = null
 
 var node_textures = {}
 
+var is_delete_edge_mode = false
+
 var graph = {
 	"A": ["B", "C"],
 	"B": ["A", "C"],
@@ -292,6 +294,47 @@ func create_label(vertex, node):
 	set_process(true)
 
 func _process(delta):
+	if is_delete_edge_mode:
+		#print("is_delete_edge_mode: " + str(is_delete_edge_mode))
+		# Listen for a mouse click event
+		if Input.is_mouse_button_pressed(BUTTON_LEFT):
+			yield(get_tree().create_timer(0.5), "timeout")
+			# Get the mouse position in the viewport
+			var mouse_pos = get_viewport().get_mouse_position()
+			#print("mouse_pos: " + str(mouse_pos))
+			
+			# Create a ray from the camera to the mouse position
+			var from = $Camera.project_ray_origin(mouse_pos)
+			var to = from + $Camera.project_ray_normal(mouse_pos) * 1000
+			
+			print("Ray from: ", from, " to: ", to)
+			
+			# Perform the actual raycast
+			var space_state = get_world().direct_space_state
+			var result = space_state.intersect_ray(from, to)
+			
+			print("result: " + str(result))
+			
+			if result:
+				var collider = result.collider
+				if collider is StaticBody:
+					print("Clicked on edge: " + collider.name)
+					print("Clicked on edge' name: " + collider.get_parent().get_parent().name)
+					var edge_name = collider.get_parent().get_parent().name
+					# Delete the edge from the scene
+					collider.get_parent().get_parent().queue_free()
+					
+					# Update the graph dictionary
+					var edge_parts = edge_name.split("_")
+					var start_node = edge_parts[0]
+					var end_node = edge_parts[1]
+					graph[start_node].erase(end_node)
+					graph[end_node].erase(start_node)
+					
+					# Reset the delete edge mode
+					is_delete_edge_mode = false
+					$NameEditPanel/DeleteEdgeButton.disabled = false
+					# Here you can delete the edge
 	update_label_positions()
 
 func update_label_positions():
@@ -374,20 +417,36 @@ func create_and_add_edge(start_node, end_node, start_name, end_name):
 		
 		# Set a unique name for the edge
 		created_edgies.append(end_name + "_" + start_name)
+		print("created edge name: " + start_name + "_" + end_name)
 		edge.set_name(start_name + "_" + end_name)
 
 func create_edge(start_node, end_node):
 	print(start_node.global_transform.origin, end_node.global_transform.origin)
-	var edge = Spatial.new()
-	var cylinder = MeshInstance.new()
-	cylinder.set_mesh(CylinderMesh.new())
-	
-	edge.add_child(cylinder)
 	
 	var start_pos = start_node.get_translation()
 	var end_pos = end_node.get_translation()
 	var diff = end_pos - start_pos
-	var distance = diff.length()
+	var distance = diff.length()	
+	
+	var edge = Spatial.new()
+	var cylinder = MeshInstance.new()
+	cylinder.set_mesh(CylinderMesh.new())
+	
+	# Add a StaticBody with a CollisionShape as a child of the Cylinder
+	var static_body = StaticBody.new()
+	var collision_shape = CollisionShape.new()
+	var shape = CylinderShape.new()
+	shape.radius = 0.1
+	shape.height = distance
+	collision_shape.set_shape(shape)
+
+	static_body.add_child(collision_shape)
+	cylinder.add_child(static_body)
+
+	# Set the collision layer for the StaticBody node
+	static_body.set_collision_layer(1 << 0)
+	
+	edge.add_child(cylinder)	
 	
 	# Set cylinder position and scale
 	cylinder.set_translation(Vector3(0, distance / 2, 0))
@@ -411,7 +470,7 @@ func create_edge(start_node, end_node):
 	return edge
 
 func _unhandled_input(event):
-	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT:
+	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT and !get_node("NameEditPanel").visible:
 		# Get the camera and viewport
 		var camera = get_viewport().get_camera()
 
@@ -524,6 +583,12 @@ func _on_ReloadButton_pressed():
 
 	get_node("HTTPRequestNewImg").set_meta("node_name", selected_node.get_name())
 	get_node("HTTPRequestNewImg").request(new_image)
+	
+func _on_DeleteEdgeButton_pressed():
+	print("-is_delete_edge_mode = ", is_delete_edge_mode)
+	$NameEditPanel/DeleteEdgeButton.disabled = true
+	is_delete_edge_mode = true
+	print("--is_delete_edge_mode = ", is_delete_edge_mode)
 
 func _on_UseOldImageButton_pressed():
 	var texture = preload("res://loading.png")
